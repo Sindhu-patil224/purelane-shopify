@@ -1,0 +1,376 @@
+{{ 'purelane-sections.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'purelane-sections.js' | asset_url }}" defer></script>
+
+<section
+  id="PurelaneBundles-{{ section.id }}"
+  class="pl-section pl-sec pl-scene-3"
+  data-pl-section="bundles"
+>
+  <div class="pl-wrap">
+
+    <!-- Section heading -->
+    <div class="pl-glass pl-sec-pad pl-rv" style="margin-bottom:16px">
+      <div class="pl-panel-head" style="margin-bottom:0">
+
+        {%- if section.settings.kicker != blank -%}
+          <span class="pl-kicker">
+            {{ section.settings.kicker }}
+          </span>
+        {%- endif -%}
+
+        <h2 class="pl-d2" style="margin-top:12px">
+          {{ section.settings.heading }}
+        </h2>
+
+        {%- if section.settings.subheading != blank -%}
+          <p class="pl-lede" style="margin:0 auto">
+            {{ section.settings.subheading }}
+          </p>
+        {%- endif -%}
+
+      </div>
+    </div>
+
+    <!-- Bundle tiers -->
+    <div class="pl-tiers">
+
+      {%- for block in section.blocks -%}
+
+        {%- liquid
+          assign preview_products = block.settings.preview_products
+          assign qty = block.settings.quantity
+          assign feature_lines = block.settings.features | newline_to_br | split: '<br />'
+
+          assign price_cents = block.settings.price | times: 100
+          assign compare_price_cents = block.settings.compare_price | times: 100
+          assign per_product_cents = price_cents | divided_by: qty
+        -%}
+
+        <article
+          class="
+            pl-glass
+            pl-tier
+            pl-rv
+            {% if forloop.index > 1 %}pl-rv-d{{ forloop.index0 }}{% endif %}
+            {% if block.settings.best %}pl-best{% endif %}
+          "
+          {{ block.shopify_attributes }}
+        >
+
+          <!-- Bundle tag -->
+          {%- if block.settings.tag != blank -%}
+            <span class="pl-tag">
+              {{ block.settings.tag }}
+            </span>
+          {%- endif -%}
+
+
+          <!-- Product preview images -->
+          {%- if preview_products.size > 0 -%}
+
+            <div
+              class="pl-tierpix{% if qty >= 5 %} pl-five{% endif %}"
+              aria-hidden="true"
+            >
+
+              {%- for product in preview_products limit: 5 -%}
+
+                {%- if product.featured_media -%}
+
+                  {{
+                    product.featured_media
+                    | image_url: width: 140
+                    | image_tag:
+                      loading: 'lazy',
+                      alt: product.title
+                  }}
+
+                {%- else -%}
+
+                  <span class="pl-noimg">
+                    {{ 'product-1' | placeholder_svg_tag }}
+                  </span>
+
+                {%- endif -%}
+
+              {%- endfor -%}
+
+            </div>
+
+          {%- endif -%}
+
+
+          <!-- Number of products -->
+          <div class="pl-qty">
+            {{ qty }}
+            <small>Products</small>
+          </div>
+
+
+          <!-- Bundle price -->
+          <div class="pl-price">
+
+            <strong>
+              {{ price_cents | money }}
+            </strong>
+
+            {%- if compare_price_cents > price_cents -%}
+              <s>
+                {{ compare_price_cents | money }}
+              </s>
+            {%- endif -%}
+
+          </div>
+
+
+          <!-- Price per product -->
+          {%- if qty > 0 -%}
+
+            <p style="font-size:12px;color:var(--pl-paper-3)">
+              Flat {{ per_product_cents | money }} per product
+            </p>
+
+          {%- endif -%}
+
+
+          <!-- Features -->
+          {%- if block.settings.features != blank -%}
+
+            <ul>
+
+              {%- for line in feature_lines -%}
+
+                {%- assign line = line | strip -%}
+
+                {%- if line != blank -%}
+
+                  <li>
+
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.4"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="m5 13 4 4L19 7"/>
+                    </svg>
+
+                    {{ line }}
+
+                  </li>
+
+                {%- endif -%}
+
+              {%- endfor -%}
+
+            </ul>
+
+          {%- endif -%}
+
+
+          <!-- CTA -->
+          <a
+            class="
+              pl-btn
+              {% if block.settings.best %}
+                pl-btn-primary
+              {% else %}
+                pl-btn-ghost
+              {% endif %}
+            "
+            href="{{ block.settings.link | default: '#' }}"
+          >
+
+            {{ block.settings.cta_label | default: 'Build this box' }}
+
+            {%- if block.settings.best -%}
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12h13m-5-6 6 6-6 6"/>
+              </svg>
+
+            {%- endif -%}
+
+          </a>
+
+        </article>
+
+      {%- endfor -%}
+
+    </div>
+
+  </div>
+</section>
+
+
+{% schema %}
+
+{
+  "name": "Purelane bundles",
+  "tag": "section",
+  "class": "pl-bundles-section",
+
+  "settings": [
+
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "Kicker",
+      "default": "Build your bundle"
+    },
+
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "One box. Every room."
+    },
+
+    {
+      "type": "textarea",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "Mix and match across kitchen, laundry, home and skin."
+    }
+
+  ],
+
+  "blocks": [
+
+    {
+      "type": "tier",
+      "name": "Bundle tier",
+      "limit": 3,
+
+      "settings": [
+
+        {
+          "type": "text",
+          "id": "tag",
+          "label": "Tag",
+          "default": "Starter"
+        },
+
+        {
+          "type": "range",
+          "id": "quantity",
+          "label": "Number of products",
+          "min": 2,
+          "max": 5,
+          "step": 1,
+          "default": 2
+        },
+
+        {
+          "type": "number",
+          "id": "price",
+          "label": "Bundle price",
+          "info": "Enter the price normally, for example 349 for $349.",
+          "default": 349
+        },
+
+        {
+          "type": "number",
+          "id": "compare_price",
+          "label": "Compare-at price",
+          "info": "Enter the compare-at price normally, for example 598 for $598.",
+          "default": 598
+        },
+
+        {
+          "type": "textarea",
+          "id": "features",
+          "label": "Feature list",
+          "info": "Enter one feature per line.",
+          "default": "Pick any two products\nFree shipping across India"
+        },
+
+        {
+          "type": "product_list",
+          "id": "preview_products",
+          "label": "Preview products",
+          "limit": 5,
+          "info": "Product thumbnails shown above the bundle."
+        },
+
+        {
+          "type": "checkbox",
+          "id": "best",
+          "label": "Mark as Most popular",
+          "default": false
+        },
+
+        {
+          "type": "text",
+          "id": "cta_label",
+          "label": "Button label",
+          "default": "Build this box"
+        },
+
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Button link"
+        }
+
+      ]
+    }
+
+  ],
+
+  "presets": [
+
+    {
+      "name": "Purelane bundles",
+
+      "blocks": [
+
+        {
+          "type": "tier",
+          "settings": {
+            "tag": "Starter",
+            "quantity": 2,
+            "price": 349,
+            "compare_price": 598
+          }
+        },
+
+        {
+          "type": "tier",
+          "settings": {
+            "tag": "Most popular",
+            "quantity": 3,
+            "price": 499,
+            "compare_price": 897,
+            "best": true
+          }
+        },
+
+        {
+          "type": "tier",
+          "settings": {
+            "tag": "Whole home",
+            "quantity": 5,
+            "price": 799,
+            "compare_price": 1495
+          }
+        }
+
+      ]
+    }
+
+  ]
+}
+
+{% endschema %}

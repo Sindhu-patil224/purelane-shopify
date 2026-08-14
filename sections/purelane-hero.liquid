@@ -1,0 +1,322 @@
+{{ 'purelane-sections.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'purelane-sections.js' | asset_url }}" defer></script>
+
+<section
+  id="PurelaneHero-{{ section.id }}"
+  class="pl-section pl-hero pl-scene-1"
+  data-pl-section="hero"
+>
+  <div class="pl-hero-grid">
+
+    {%- if section.blocks.size > 0 -%}
+      <div class="pl-badges pl-glass-2" aria-label="Product promises">
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'badge' -%}
+            <div class="pl-badge" {{ block.shopify_attributes }}>
+              <span class="pl-bi">{{ block.settings.icon }}</span>
+              <span>{{ block.settings.label }}</span>
+            </div>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    {%- endif -%}
+
+    <div class="pl-hero-copy">
+
+      <h1 class="pl-d1 pl-rv pl-in">
+        {{ section.settings.heading }}
+      </h1>
+
+      <div class="pl-rule pl-rv pl-rv-d1">
+        <i></i>
+
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 21c0-6.5 3.5-11 8-12.5C20 15 16.5 20 12 21Z"/>
+          <path d="M12 21C12 14.5 8.5 10 4 8.5 4 15 7.5 20 12 21Z"/>
+        </svg>
+
+        <i></i>
+      </div>
+
+      {%- if section.settings.subheading != blank -%}
+        <p class="pl-lede pl-rv pl-rv-d2">
+          {{ section.settings.subheading }}
+        </p>
+      {%- endif -%}
+
+      <div class="pl-hero-cta pl-rv pl-rv-d3">
+
+        {%- if section.settings.primary_label != blank -%}
+          <a
+            class="pl-btn pl-btn-primary"
+            href="{{ section.settings.primary_link | default: '#' }}"
+          >
+            {{ section.settings.primary_label }}
+
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 12h13m-5-6 6 6-6 6"/>
+            </svg>
+          </a>
+        {%- endif -%}
+
+        {%- if section.settings.secondary_label != blank -%}
+          <a
+            class="pl-btn pl-btn-ghost"
+            href="{{ section.settings.secondary_link | default: '#' }}"
+          >
+            {{ section.settings.secondary_label }}
+          </a>
+        {%- endif -%}
+
+      </div>
+
+      {%- if section.blocks.size > 0 -%}
+        <div class="pl-badgestrip pl-rv pl-rv-d4">
+
+          {%- for block in section.blocks -%}
+            {%- if block.type == 'badge' -%}
+              <div class="pl-glass-2" {{ block.shopify_attributes }}>
+                <span aria-hidden="true">{{ block.settings.icon }}</span>
+                {{ block.settings.label }}
+              </div>
+            {%- endif -%}
+          {%- endfor -%}
+
+        </div>
+      {%- endif -%}
+
+    </div>
+
+    {%- assign slide_blocks = section.blocks | where: 'type', 'slide' -%}
+
+    {%- if slide_blocks.size > 0 -%}
+
+      <div class="pl-hero-prod">
+
+        <div class="pl-hstage" data-pl-hstage>
+
+          {%- for block in slide_blocks -%}
+
+            {%- liquid
+              assign p = block.settings.product
+              assign compare = p.compare_at_price
+              assign price = p.price
+              assign on_sale = false
+
+              if compare > price
+                assign on_sale = true
+              endif
+            -%}
+
+            <div
+              class="pl-hslide{% if forloop.first %} pl-on{% endif %}"
+              data-block-id="{{ block.id }}"
+              {{ block.shopify_attributes }}
+            >
+
+              {%- if p != blank and p.featured_media -%}
+
+                {{
+                  p.featured_media
+                  | image_url: width: 500
+                  | image_tag:
+                    loading: 'lazy',
+                    alt: p.title
+                }}
+
+              {%- elsif p != blank -%}
+
+                <span class="pl-noimg" aria-hidden="true">
+                  {{ 'product-1' | placeholder_svg_tag }}
+                </span>
+
+              {%- endif -%}
+
+              <div class="pl-glass-2 pl-ptag">
+
+                <span class="pl-lbl">
+                  {{ block.settings.label }}
+                </span>
+
+                <span class="pl-val">
+                  <strong>
+                    {{ p.price | default: 0 | money }}
+                  </strong>
+
+                  {%- if on_sale -%}
+                    <s>{{ compare | money }}</s>
+                  {%- endif -%}
+                </span>
+
+                {%- if block.settings.cut_label != blank -%}
+                  <span class="pl-cut">
+                    {{ block.settings.cut_label }}
+                  </span>
+                {%- endif -%}
+
+              </div>
+
+            </div>
+
+          {%- endfor -%}
+
+        </div>
+
+        {%- if slide_blocks.size > 1 -%}
+
+          <div class="pl-hdots" data-pl-hdots>
+
+            {%- for block in slide_blocks -%}
+              <button
+                type="button"
+                class="{% if forloop.first %}pl-on{% endif %}"
+                aria-label="Show slide {{ forloop.index }}"
+              ></button>
+            {%- endfor -%}
+
+          </div>
+
+        {%- endif -%}
+
+      </div>
+
+    {%- endif -%}
+
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Purelane hero",
+  "tag": "section",
+  "class": "pl-hero-section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Clean That Lasts"
+    },
+    {
+      "type": "textarea",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "Homecare that works on the toughest grime, made from plants."
+    },
+    {
+      "type": "text",
+      "id": "primary_label",
+      "label": "Primary button label",
+      "default": "Shop now"
+    },
+    {
+      "type": "url",
+      "id": "primary_link",
+      "label": "Primary button link"
+    },
+    {
+      "type": "text",
+      "id": "secondary_label",
+      "label": "Secondary button label",
+      "default": "How it works"
+    },
+    {
+      "type": "url",
+      "id": "secondary_link",
+      "label": "Secondary button link"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "badge",
+      "name": "Promise badge",
+      "limit": 3,
+      "settings": [
+        {
+          "type": "html",
+          "id": "icon",
+          "label": "Icon (inline SVG)",
+          "info": "Paste a small inline <svg>…</svg>. Keep it simple and single-colour; it inherits the accent colour automatically."
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Label",
+          "default": "Plant powered"
+        }
+      ]
+    },
+    {
+      "type": "slide",
+      "name": "Product slide",
+      "limit": 3,
+      "settings": [
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Product"
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Slide label",
+          "default": "Single bottle"
+        },
+        {
+          "type": "text",
+          "id": "cut_label",
+          "label": "Callout badge (optional)",
+          "info": "e.g. \"33% off\" or \"Save ₹249\". Leave blank if the product isn't on sale."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Purelane hero",
+      "blocks": [
+        {
+          "type": "badge",
+          "settings": {
+            "label": "Plant powered"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "label": "Safe for kids & pets"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "label": "Zero harsh chemicals"
+          }
+        },
+        {
+          "type": "slide",
+          "settings": {
+            "label": "Single bottle"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,84 @@
+{%- comment -%}
+  Renders one product card in the Purelane visual language.
+  Accepts:
+    product           - required, a product object
+    card_index        - integer, used only to stagger the reveal animation
+  Real Shopify data only: title, price, compare_at_price, image, and
+  availability all come straight off `product`. Two small fields the
+  platform has no native equivalent for are solved with product metafields
+  (see notes.md / metafields.md for the definitions to create):
+    product.metafields.purelane.badge_label   (single line text)
+      -> pill text such as "Best seller" / "New" / "Top rated".
+         Falls back to "Sold out" / "Save X%" automatically, see below.
+    product.metafields.reviews.rating         (decimal)
+    product.metafields.reviews.rating_count   (integer)
+      -> star rating + review count. If a review app (Judge.me, Loox, etc.)
+         is installed later, swap this block for the app's snippet/block;
+         the metafields are just a native placeholder so the card never
+         renders empty state.
+{%- endcomment -%}
+
+{%- liquid
+  assign badge_label = product.metafields.purelane.badge_label.value
+  assign rating = product.metafields.reviews.rating.value
+  assign rating_count = product.metafields.reviews.rating_count.value
+  assign compare = product.compare_at_price
+  assign price = product.price
+  assign on_sale = false
+  if compare > price
+    assign on_sale = true
+    assign pct_off = compare | minus: price | times: 100.0 | divided_by: compare | round
+  endif
+-%}
+
+<article class="pl-glass pl-card pl-rv{% if card_index %} pl-rv-d{{ card_index | modulo: 4 | plus: 1 }}{% endif %}">
+  <a href="{{ product.url }}" class="pl-cardlink">
+    <div class="pl-shot">
+      {%- if badge_label != blank -%}
+        <span class="pl-pill">{{ badge_label }}</span>
+      {%- elsif product.available == false -%}
+        <span class="pl-pill pl-sold">Sold out</span>
+      {%- elsif on_sale -%}
+        <span class="pl-pill">{{ pct_off }}% off</span>
+      {%- endif -%}
+
+      {%- if product.featured_media -%}
+        {{ product.featured_media | image_url: width: 400 | image_tag:
+          loading: 'lazy',
+          widths: '200,300,400',
+          alt: product.featured_media.alt | default: product.title
+        }}
+      {%- else -%}
+        <span class="pl-noimg" aria-hidden="true">{{ 'product-1' | placeholder_svg_tag }}</span>
+      {%- endif -%}
+    </div>
+
+    <h4 class="pl-clamp2">{{ product.title }}</h4>
+  </a>
+
+  {%- if rating -%}
+    <div class="pl-rate"><b>★ {{ rating }}</b> · {{ rating_count | default: 0 }} reviews</div>
+  {%- endif -%}
+
+  <div class="pl-pr">
+    <strong>{{ price | money }}</strong>
+    {%- if on_sale -%}
+      <s>{{ compare | money }}</s>
+      <em>{{ pct_off }}% off</em>
+    {%- endif -%}
+  </div>
+
+  {%- if product.available -%}
+    {%- assign card_variant = product.selected_or_first_available_variant -%}
+    <product-form>
+      {%- form 'product', product, class: 'pl-card-form' -%}
+        <input type="hidden" name="id" value="{{ card_variant.id }}">
+        <button type="submit" class="pl-btn pl-btn-ghost pl-btn-sm" {% if card_variant.available == false %}disabled{% endif %}>
+          Add to cart
+        </button>
+      {%- endform -%}
+    </product-form>
+  {%- else -%}
+    <button type="button" class="pl-btn pl-btn-ghost pl-btn-sm" disabled>Sold out</button>
+  {%- endif -%}
+</article>
