@@ -2,13 +2,15 @@
 <script src="{{ 'purelane-sections.js' | asset_url }}" defer></script>
 
 {%- comment -%}
-  A "combo" here is a curated set of products sold together at a flat
-  price. Shopify has no native bundle-with-its-own-price object without
-  the Shopify Bundles app / a selling-plan setup, so this section solves
-  it the way a lot of production Dawn builds do: the merchant picks the
-  real products (so imagery/alt text/availability stay live) and types
-  the bundle's actual selling price; the "compare at" and "you save"
-  values are computed automatically from the chosen products' own prices.
+  Purelane Best Selling Combos
+
+  Products in this combo:
+  - Up to 3 real Shopify products shown in the combo card.
+
+  Combo product:
+  - One real Shopify product selected by the merchant.
+  - This is the product that gets added to cart.
+  - The customer adds ONE combo item, not the individual products.
 {%- endcomment -%}
 
 <section
@@ -18,9 +20,13 @@
 >
   <div class="pl-wrap">
 
+    <!-- Section heading -->
     <div class="pl-panel-head pl-rv">
+
       {%- if section.settings.kicker != blank -%}
-        <span class="pl-kicker">{{ section.settings.kicker }}</span>
+        <span class="pl-kicker">
+          {{ section.settings.kicker }}
+        </span>
       {%- endif -%}
 
       <h2 class="pl-d2" style="margin-top:12px">
@@ -29,6 +35,7 @@
 
       <div class="pl-rule">
         <i></i>
+
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -41,6 +48,7 @@
           <path d="M12 21c0-6.5 3.5-11 8-12.5C20 15 16.5 20 12 21Z"/>
           <path d="M12 21C12 14.5 8.5 10 4 8.5 4 15 7.5 20 12 21Z"/>
         </svg>
+
         <i></i>
       </div>
 
@@ -49,42 +57,54 @@
           {{ section.settings.subheading }}
         </p>
       {%- endif -%}
+
     </div>
 
+
+    <!-- Combo cards -->
     <div class="pl-comborail pl-rv">
 
       {%- for block in section.blocks -%}
 
         {%- liquid
           assign products = block.settings.products
+          assign combo_product = block.settings.combo_product
           assign compare_total = 0
 
-          for p in products
-            assign line_compare = p.compare_at_price | default: p.price
+          for product in products
+            assign line_compare = product.compare_at_price | default: product.price
             assign compare_total = compare_total | plus: line_compare
           endfor
 
-          assign savings = compare_total | minus: block.settings.bundle_price
+          if combo_product != blank
+            assign combo_variant = combo_product.selected_or_first_available_variant
+            assign combo_price = combo_product.price
+            assign savings = compare_total | minus: combo_price
+          endif
         -%}
+
 
         <article
           class="pl-glass pl-combo{% if block.settings.featured %} pl-hero-combo{% endif %}"
           {{ block.shopify_attributes }}
         >
 
+          <!-- Product preview -->
           <div class="pl-tray">
 
-            {%- if savings > 0 -%}
+            {%- if combo_product != blank and savings > 0 -%}
               <span class="pl-save">
                 You save {{ savings | money }}
               </span>
             {%- endif -%}
+
 
             {%- if block.settings.flag != blank -%}
               <span class="pl-flag">
                 {{ block.settings.flag }}
               </span>
             {%- endif -%}
+
 
             <div class="pl-stack">
 
@@ -110,78 +130,153 @@
 
                   {%- endif -%}
 
-                  <span>{{ product.title }}</span>
+                  <span>
+                    {{ product.title }}
+                  </span>
 
                 </span>
 
+
                 {%- unless forloop.last -%}
-                  <span class="pl-plus" aria-hidden="true">+</span>
+
+                  <span
+                    class="pl-plus"
+                    aria-hidden="true"
+                  >
+                    +
+                  </span>
+
                 {%- endunless -%}
 
               {%- endfor -%}
 
             </div>
+
           </div>
 
+
+          <!-- Combo details -->
           <div class="pl-body">
 
             <h3 class="pl-clamp2">
               {{ block.settings.title }}
             </h3>
 
+
             <div class="pl-cnt">
               {{ products.size }} products
             </div>
 
+
             {%- if block.settings.description != blank -%}
+
               <p class="pl-inc">
                 {{ block.settings.description }}
               </p>
+
             {%- endif -%}
 
+
+            <!-- Combo price -->
             <div class="pl-prow">
 
-              <strong>
-                {{ block.settings.bundle_price | money }}
-              </strong>
+              {%- if combo_product != blank -%}
 
-              {%- if compare_total > block.settings.bundle_price -%}
+                <strong>
+                  {{ combo_price | money }}
+                </strong>
 
-                <s>
-                  {{ compare_total | money }}
-                </s>
 
-                <em>
-                  Save {{ savings | money }}
-                </em>
+                {%- if savings > 0 -%}
+
+                  <s>
+                    {{ compare_total | money }}
+                  </s>
+
+                  <em>
+                    Save {{ savings | money }}
+                  </em>
+
+                {%- endif -%}
+
+              {%- else -%}
+
+                <strong>
+                  Select combo product
+                </strong>
 
               {%- endif -%}
 
             </div>
 
+
             <div class="pl-fine">
               Inclusive of all taxes · COD available
             </div>
 
-            <a
-              class="pl-btn {% if block.settings.featured %}pl-btn-primary{% else %}pl-btn-ghost{% endif %}"
-              href="{{ block.settings.link | default: '#' }}"
-            >
-              Shop bundle
 
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
+            <!-- Add ONE combo product to cart -->
+            {%- if combo_product != blank -%}
+
+              <form
+                method="post"
+                action="{{ routes.cart_add_url }}"
+                class="pl-combo-form"
               >
-                <path d="M5 12h13m-5-6 6 6-6 6"/>
-              </svg>
 
-            </a>
+                <input
+                  type="hidden"
+                  name="id"
+                  value="{{ combo_variant.id }}"
+                >
+
+                <input
+                  type="hidden"
+                  name="quantity"
+                  value="1"
+                >
+
+                <button
+                  type="submit"
+                  class="pl-btn {% if block.settings.featured %}pl-btn-primary{% else %}pl-btn-ghost{% endif %}"
+                  {% unless combo_variant.available %}
+                    disabled
+                  {% endunless %}
+                >
+
+                  {%- if combo_variant.available -%}
+                    Shop bundle
+                  {%- else -%}
+                    Sold out
+                  {%- endif -%}
+
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12h13m-5-6 6 6-6 6"/>
+                  </svg>
+
+                </button>
+
+              </form>
+
+            {%- else -%}
+
+              <button
+                type="button"
+                class="pl-btn pl-btn-ghost"
+                disabled
+              >
+                Select combo product
+              </button>
+
+            {%- endif -%}
 
           </div>
 
@@ -191,7 +286,13 @@
 
     </div>
 
-    <div class="pl-swipecue" aria-hidden="true">
+
+    <!-- Swipe indicator -->
+    <div
+      class="pl-swipecue"
+      aria-hidden="true"
+    >
+
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -204,112 +305,146 @@
       </svg>
 
       Swipe for more combos
+
     </div>
 
+
     {%- if section.settings.footnote != blank -%}
+
       <p class="pl-railnote">
         {{ section.settings.footnote }}
       </p>
+
     {%- endif -%}
 
   </div>
 </section>
 
+
 {% schema %}
+
 {
   "name": "Purelane combos",
   "tag": "section",
   "class": "pl-combos-section",
+
   "settings": [
+
     {
       "type": "text",
       "id": "kicker",
       "label": "Kicker",
       "default": "Pre-built to save you money"
     },
+
     {
       "type": "text",
       "id": "heading",
       "label": "Heading",
       "default": "Best selling combos"
     },
+
     {
       "type": "textarea",
       "id": "subheading",
       "label": "Subheading",
       "default": "Swipe through the boxes people order most."
     },
+
     {
       "type": "textarea",
       "id": "footnote",
       "label": "Footnote"
     }
+
   ],
+
+
   "blocks": [
+
     {
       "type": "combo",
       "name": "Combo",
+
       "settings": [
+
         {
           "type": "text",
           "id": "title",
           "label": "Combo name",
           "default": "Kitchen essentials"
         },
+
+
         {
           "type": "product_list",
           "id": "products",
-          "label": "Products in this combo",
+          "label": "Products shown in combo",
           "limit": 3,
-          "info": "Pick up to 3. Prices, images and titles come straight from these products."
+          "info": "These real products are displayed inside the combo card."
         },
+
+
+        {
+          "type": "product",
+          "id": "combo_product",
+          "label": "Combo product",
+          "info": "Select the actual Shopify combo product. This single product is added to cart."
+        },
+
+
         {
           "type": "textarea",
           "id": "description",
           "label": "Description"
         },
-        {
-          "type": "number",
-          "id": "bundle_price",
-          "label": "Bundle price",
-          "info": "The flat price charged for the combo. Compare-at and savings are calculated automatically from the products above.",
-          "default": 499
-        },
+
+
         {
           "type": "text",
           "id": "flag",
           "label": "Corner flag (optional)",
-          "info": "e.g. Most popular"
+          "info": "Example: Most popular"
         },
+
+
         {
           "type": "checkbox",
           "id": "featured",
           "label": "Highlight as featured combo",
           "default": false
-        },
-        {
-          "type": "url",
-          "id": "link",
-          "label": "Shop bundle link"
         }
+
       ]
     }
+
   ],
+
+
   "presets": [
+
     {
       "name": "Purelane combos",
+
       "blocks": [
+
         {
           "type": "combo"
         },
+
         {
           "type": "combo"
         },
+
         {
           "type": "combo"
         }
+
       ]
     }
+
   ]
+
 }
+
 {% endschema %}
